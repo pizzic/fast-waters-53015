@@ -10,6 +10,7 @@ gunicorn==0.17.2
 wsgiref==0.1.2
 Pillow==3.4.2
 boto3==1.7.4
+tensorflow==1.2.0
 Keras==2.1.5
 mritopng==2.1
 numpy==1.11.2
