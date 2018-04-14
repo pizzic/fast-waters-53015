@@ -8,6 +8,7 @@ from gevent.queue import Empty, Queue
 from shutil import rmtree
 from hashlib import sha1
 from stat import S_ISREG, ST_CTIME, ST_MODE
+import predict_image
 
 
 DATA_DIR = 'data'
@@ -69,18 +70,23 @@ def safe_addr(ip_addr):
 
 
 def save_normalized_image(path, data):
-    image_parser = ImageFile.Parser()
-    try:
-        image_parser.feed(data)
-        image = image_parser.close()
-    except IOError:
-        raise
-        return False
-    image.thumbnail(MAX_IMAGE_SIZE, Image.ANTIALIAS)
-    if image.mode != 'RGB':
-        image = image.convert('RGB')
-    image.save(path)
-    return True
+    with open(path, 'w') as file:
+        file.write(data)
+        
+
+    #image_parser = ImageFile.Parser()
+    #try:
+    #    image_parser.feed(data)
+    #    image = image_parser.close()
+    #except IOError:
+    #    raise
+    #    return False
+    #image.thumbnail(MAX_IMAGE_SIZE, Image.ANTIALIAS)
+    #if image.mode != 'RGB':
+    #    image = image.convert('RGB')
+    #image.save(path)
+    path = predict_image.predict_image(path)
+    return path
 
 
 def event_stream(client):
@@ -99,11 +105,12 @@ def event_stream(client):
 def post():
     sha1sum = sha1(flask.request.data).hexdigest()
     target = os.path.join(DATA_DIR, '{0}.jpg'.format(sha1sum))
-    message = json.dumps({'src': target,
-                          'ip_addr': safe_addr(flask.request.access_route[0])})
     try:
-        if save_normalized_image(target, flask.request.data):
-            broadcast(message)  # Notify subscribers of completion
+        path = save_normalized_image(target, flask.request.data)
+        print path
+        message = json.dumps({'src': path,
+                              'ip_addr': safe_addr(flask.request.access_route[0])})
+        broadcast(message)  # Notify subscribers of completion
     except Exception as e:  # Output errors
         return '{0}'.format(e)
     return 'success'
@@ -130,7 +137,7 @@ def home():
         if i >= MAX_IMAGES:
             os.unlink(path)
             continue
-        images.append('<div><img alt="User uploaded image" src="{0}" /></div>'
+        images.append('<div><img alt="User uploaded image" max-height:500px; max-width:500px; src="{0}" /></div>'
                       .format(path))
     return """
 <!doctype html>
@@ -204,7 +211,7 @@ dynamically view new images.</noscript>
               return;
           var data = $.parseJSON(e.data);
           var upload_message = 'Image uploaded by ' + data['ip_addr'];
-          var image = $('<img>', {alt: upload_message, src: data['src']});
+          var image = $('<img>', {alt: upload_message, width: "500px", src: data['src']});
           var container = $('<div>').hide();
           container.append($('<div>', {text: upload_message}));
           container.append(image);
