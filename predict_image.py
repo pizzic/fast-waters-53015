@@ -2,11 +2,13 @@ from keras.models import load_model
 from keras.utils.generic_utils import CustomObjectScope
 from keras.applications.mobilenet import relu6, DepthwiseConv2D
 import boto3
-import mritopng
+#import mritopng
 import numpy as np
 from keras.preprocessing.image import ImageDataGenerator
 import cv2
 from PIL import Image
+import png
+import pydicom
 import os, shutil
 
 def save_img(test, img_dir, image, im, box, pic):
@@ -15,10 +17,33 @@ def save_img(test, img_dir, image, im, box, pic):
     if np.average(np.array(region.getdata())) > 4:
         region.save('{}_{}_{}_{}.png'.format(test+img_name[:-4], str(pic).zfill(5), str(int(box[0])).zfill(5), str(int(box[1])).zfill(5)))
 
+def mri_to_png(mri_file_path, png_file_path):
+    mri_file = open(mri_file_path, 'rb')
+    png_file = open(png_file_path, 'wb')
+
+    # Extracting data from the mri file
+    plan = pydicom.read_file(mri_file)
+    shape = plan.pixel_array.shape
+
+    #Convert to float to avoid overflow or underflow losses.
+    image_2d = plan.pixel_array.astype(float)
+
+    # Rescaling grey scale between 0-255
+    image_2d_scaled = (np.maximum(image_2d,0) / image_2d.max()) * 255.0
+    
+    #Convert to uint
+    image_2d_scaled = np.uint8(image_2d_scaled)
+
+    # Writing the PNG file
+    w = png.Writer(shape[1], shape[0], greyscale=True)
+    w.write(png_file, image_2d_scaled)
+
+    png_file.close()
+    
 def predict_image(image):
     if image.endswith('.dcm'):
         if not os.path.isfile(image[:-4]+'.png'):
-            mritopng.convert_file(image, image[:-4]+'.png')
+            mri_to_png(image, image[:-4]+'.png')
             print('converted dcm to png')
         image = image[:-4]+'.png'
 
@@ -77,7 +102,7 @@ def predict_image(image):
                                                                             batch_size=10,
                                                                             class_mode=None)
     
-    pred = model.predict_generator(test_generator,verbose=1)
+    pred = model.predict_generator(test_generator,verbose=0)
     
     print('made predictions')
     
