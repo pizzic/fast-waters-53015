@@ -137,7 +137,7 @@ def home():
         if i >= MAX_IMAGES:
             os.unlink(path)
             continue
-        images.append('<div><img alt="User uploaded image" max-height:500px; max-width:500px; src="{0}" /></div>'
+        images.append('<div><img alt="User uploaded image"; width:"500px"; src="{0}" /></div>'
                       .format(path))
     return """
 <!doctype html>
