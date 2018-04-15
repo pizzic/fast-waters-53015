@@ -1,6 +1,7 @@
 from keras.models import load_model
 from keras.utils.generic_utils import CustomObjectScope
 from keras.applications.mobilenet import relu6, DepthwiseConv2D
+import keras.backend as K
 import boto3
 #import mritopng
 import numpy as np
@@ -92,6 +93,7 @@ def predict_image(image):
     
     print('images cut up')
     
+    K.clear_session()
     with CustomObjectScope({'relu6': relu6,'DepthwiseConv2D': DepthwiseConv2D}):
         model = load_model('1_epoch.h5')
         
