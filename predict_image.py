@@ -127,7 +127,9 @@ def predict_image(image):
     print('final image made')
     
     path = image[:-4]+'_final.png'
+    os.remove(image)
+    shutil.rmtree(image[:-4])
     final.save(path)
-    
+    final.save('/var/www/html/flaskapp/'+path)    
     #return final, np.max(pred[:,0]*100)
     return path

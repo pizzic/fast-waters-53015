@@ -12,10 +12,10 @@ import predict_image
 
 
 DATA_DIR = 'data'
-KEEP_ALIVE_DELAY = 25
+KEEP_ALIVE_DELAY = 600
 MAX_IMAGE_SIZE = 800, 600
 MAX_IMAGES = 10
-MAX_DURATION = 300
+MAX_DURATION = 600
 
 app = flask.Flask(__name__, static_folder=DATA_DIR)
 broadcast_queue = Queue()
@@ -126,7 +126,7 @@ def stream():
 def home():
     # Code adapted from: http://stackoverflow.com/questions/168409/
     image_infos = []
-    for filename in os.listdir(DATA_DIR):
+    for filename in [x for x in os.listdir(DATA_DIR) if x.endswith('final.png')]:
         filepath = os.path.join(DATA_DIR, filename)
         file_stat = os.stat(filepath)
         if S_ISREG(file_stat[ST_MODE]):
@@ -137,11 +137,11 @@ def home():
         if i >= MAX_IMAGES:
             os.unlink(path)
             continue
-        images.append('<div><img alt="User uploaded image" max-height:500px; max-width:500px; src="{0}" /></div>'
+        images.append('<div><img alt="User uploaded image"; width:"500px"; src="{0}" /></div>'
                       .format(path))
     return """
 <!doctype html>
-<title>Image Uploader</title>
+<title>Cancer Image Uploader</title>
 <meta charset="utf-8" />
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
 <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.1/jquery-ui.min.js"></script>
@@ -151,14 +151,19 @@ def home():
     max-width: 800px;
     margin: auto;
     padding: 1em;
-    background: black;
-    color: #fff;
+    background: white;
+    color: black;
     font: 16px/1.6 menlo, monospace;
     text-align:center;
   }
 
   a {
     color: #fff;
+  }
+
+  img {
+    width: 80%%;
+    height:auto;
   }
 
   .notice {
@@ -185,11 +190,11 @@ def home():
 }
 
 </style>
-<h3>Image Uploader</h3>
-<p>Upload an image for everyone to see. Valid images are pushed to everyone
+<h3>Breast Cancer Image Prediction</h3>
+<p>Upload a mammogram image to be processed. Valid images are pushed to everyone
 currently connected, and only the most recent %s images are saved.</p>
 <p>The complete source for this Flask web service can be found at:
-<a href="https://github.com/bboe/flask-image-uploader">https://github.com/bboe/flask-image-uploader</a></p>
+<a href="https://github.com/pizzic/fast-waters-53015">https://github.com/pizzic/fast-waters-53015</a></p>
 <p class="notice">Disclaimer: The author of this application accepts no responsibility for the
 images uploaded to this web service. To discourage the submission of obscene images, IP
 addresses with the last two octets hidden will be visibly associated with uploaded images.</p>
